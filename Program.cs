@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using MessengerCallApi.Data;
 using MessengerCallApi.Hubs;
 using MessengerCallApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,13 @@ builder.Services.Configure<IdentityOptions>(o =>
 });
 
 builder.Services.AddControllers();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+    // Trust the immediate hosting proxy for scheme only; never use its client IP for rate limits.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -78,6 +86,8 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAll", p =>
     p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var jwt = builder.Configuration.GetSection("JWTKey");
+if (string.IsNullOrWhiteSpace(jwt["Secret"]) || Encoding.UTF8.GetByteCount(jwt["Secret"]!) < 32)
+    throw new InvalidOperationException("Cần cấu hình JWTKey:Secret (biến môi trường JWTKey__Secret trên Render) dài ít nhất 32 byte.");
 var key = Encoding.UTF8.GetBytes(jwt["Secret"]!);
 builder.Services.AddAuthentication(o =>
 {
@@ -112,6 +122,11 @@ builder.Services.AddAuthentication(o =>
 });
 builder.Services.AddAuthorization();
 
+var webRoot = Path.GetFullPath(builder.Configuration["Uploads:WebRoot"] ??
+    Path.Combine(builder.Environment.ContentRootPath, "wwwroot"));
+Directory.CreateDirectory(webRoot);
+builder.Environment.WebRootPath = webRoot;
+builder.Environment.WebRootFileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRoot);
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok("ok"));
@@ -131,6 +146,7 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseForwardedHeaders();
 app.UseStaticFiles(); // phuc vu /uploads/reels/... cho Reels
 app.UseCors("AllowAll");
 app.UseAuthentication();
@@ -138,3 +154,5 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
 app.Run();
+
+public partial class Program { }

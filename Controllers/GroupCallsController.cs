@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -170,4 +170,3 @@ public class GroupCallsController : ControllerBase
         return Ok(ToDto(call));
     }
 }
-

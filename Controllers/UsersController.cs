@@ -134,12 +134,16 @@ public class UsersController : ControllerBase
 
         var folder = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "avatars", MyId);
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, "avatar.jpg");
+        var extension = Path.GetExtension(req.Image.FileName).ToLowerInvariant();
+        if (extension is not (".jpg" or ".jpeg" or ".png" or ".webp" or ".gif"))
+            return BadRequest(new { message = "Ảnh cần ở định dạng JPG, PNG, WebP hoặc GIF." });
+        var filename = $"{Guid.NewGuid():N}{extension}";
+        var path = Path.Combine(folder, filename);
         await using (var stream = System.IO.File.Create(path))
         {
             await req.Image.CopyToAsync(stream);
         }
-        user.AvatarUrl = AbsoluteUrl($"uploads/avatars/{MyId}/avatar.jpg");
+        user.AvatarUrl = AbsoluteUrl($"uploads/avatars/{MyId}/{filename}");
         await _users.UpdateAsync(user);
         return Ok(ToDto(user));
     }

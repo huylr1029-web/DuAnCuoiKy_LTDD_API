@@ -37,6 +37,8 @@ public class CallsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Start([FromBody] StartCallRequest req)
     {
+        if (req.PeerId == MyId)
+            return BadRequest(new { message = "Hãy chọn tài khoản khác để gọi." });
         var me = await _users.FindByIdAsync(MyId);
         var peer = await _users.FindByIdAsync(req.PeerId);
         if (me == null || peer == null)
@@ -125,6 +127,18 @@ public class CallsController : ControllerBase
         var call = await _db.Calls.FindAsync(id);
         if (call == null) return NotFound(new { message = "Không tìm thấy cuộc gọi" });
         if (call.CallerId != MyId && call.CalleeId != MyId) return Forbid();
+
+        if (call.Status == req.Status) return Ok(call);
+        if (call.Status is "ended" or "rejected" or "missed")
+            return Conflict(new { message = "Cuộc gọi đã kết thúc.", status = call.Status });
+        if (req.Status is "accepted" or "rejected")
+        {
+            if (call.CalleeId != MyId) return Forbid();
+            if (call.Status != "ringing")
+                return Conflict(new { message = "Cuộc gọi không còn đổ chuông." });
+        }
+        if (req.Status == "missed" && (call.CallerId != MyId || call.Status != "ringing"))
+            return Conflict(new { message = "Không thể đánh dấu nhỡ cho cuộc gọi này." });
 
         call.Status = req.Status;
         call.UpdatedAt = DateTime.UtcNow;

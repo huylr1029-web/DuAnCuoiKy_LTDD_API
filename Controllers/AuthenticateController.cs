@@ -32,7 +32,7 @@ public class AuthenticateController : ControllerBase
     }
 
     private static UserDto ToDto(AppUser u) =>
-        new(u.Id, u.Name, u.Email ?? "", u.PhoneNumber, u.Online, u.LastSeen);
+        new(u.Id, u.Name, u.Email ?? "", u.PhoneNumber, u.Online, u.LastSeen, u.AvatarUrl);
 
     private string CreateToken(AppUser user)
     {

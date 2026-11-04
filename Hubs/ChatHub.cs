@@ -27,6 +27,10 @@ public class ChatHub : Hub
 
     public async Task JoinChat(string chatId)
     {
+        var uid = UserId(Context.User);
+        var parts = chatId.Split('_');
+        if (parts.Length != 2 || !parts.Contains(uid))
+            throw new HubException("Bạn không phải thành viên cuộc trò chuyện.");
         await Groups.AddToGroupAsync(Context.ConnectionId, $"chat_{chatId}");
     }
 

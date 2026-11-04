@@ -6,6 +6,10 @@
     <UserSecretsId>20b65baa-c9e7-47ea-8111-3ddfe1b1b184</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Vendor/**/*.cs" />
+    <ProjectReference Include="Vendor/AgoraIO/AgoraIO.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
